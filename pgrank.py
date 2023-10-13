@@ -11,8 +11,8 @@ from numpy import mat, eye, zeros, ones, linalg
 import random
 import time
 
-num_workers = 4
-num_vertices = 10
+num_workers = 6
+num_vertices = 100
 
 def main():
     vertices = [PageRankVertex(j,1.0/num_vertices,[]) 
