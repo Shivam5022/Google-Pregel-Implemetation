@@ -1,6 +1,6 @@
 import collections
-from vertex import Vertex
-from worker import Worker
+from src.vertex import Vertex
+from src.worker import Worker
 
 class Pregel():
     """
@@ -65,9 +65,9 @@ class Pregel():
         """
         workers = []
         for partition in self.partitions.values():
-            temp = Worker(partition)
-            workers.append(temp)
-            temp.start()
+            worker = Worker(partition)
+            workers.append(worker)
+            worker.start()
         
         for worker in workers:
             worker.join()
@@ -79,8 +79,8 @@ class Pregel():
         
         for vertex in self.graph:
             for (destination, message) in vertex.outgoingMessages:
-                pass
+                # pass
                 # How to pass message to the destination vertex ?
                 # can we do:
                 destination.incomingMessages.append((vertex, message))
-                destination.isActive = True
+                # destination.isActive = True  #paper says to mark it active, but gives inf loop here?
