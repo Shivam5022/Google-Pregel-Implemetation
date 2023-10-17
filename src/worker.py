@@ -1,19 +1,23 @@
-import threading
+import os
+import signal
+from multiprocessing import Process
+from abc import abstractmethod, ABC
 
-class Worker(threading.Thread):
-    """
-        Worker class extends the threading.Thread class. 
-        This code is meant to be part of a multithreaded program where each thread of the 
-        Worker class is responsible for processing a set of vertices.
-    """
-    def __init__(self, vertices):
-        threading.Thread.__init__(self)
-        self.vertices = vertices
-
+class Worker(ABC):
+    def __init__(self, idx, tot):
+        self.id = idx
+        self.numWorkers = tot
+        self.process : Process
+        self.pid = -1
+    
+    def create_and_run(self):
+        self.process = Process(target=self.run, args=())
+        self.process.start()
+        self.pid = self.process.pid
+    
+    @abstractmethod
     def run(self):
-        self.superstep()
-
-    def superstep(self):
-        for vertex in self.vertices:
-            if vertex.isActive:
-                vertex.update() # This function would be defined in the user program
+        raise NotImplementedError
+    
+    def wait(self):
+        self.process.join()

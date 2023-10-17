@@ -19,7 +19,7 @@ class Vertex():
     def __init__(self, id, value, edges) -> None:
         self.id = id
         self.value = value
-        self.edges = edges
+        self.edges = edges  # type of this is currenty vertex only
         self.incomingMessages = []
         self.outgoingMessages = []
         self.isActive = True
