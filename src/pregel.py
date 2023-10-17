@@ -1,9 +1,9 @@
 import collections
-import multiprocessing
 import pickle
+from multiprocessing import Process, Lock
 from redis.client import Redis
 from src.vertex import Vertex
-from src.threads import WcWorker
+from src.worker import WcWorker
 
 class Pregel():
     """
@@ -65,15 +65,35 @@ class Pregel():
             value_str = pickle.dumps(value)
             self.rds.set(key, value_str)
 
-        f = 0
-        while self.graphActive():
-            print("Running Superstep:",f)
-            self.superstep()
-            print("Communication started")
-            self.messagePassing()
-            print("Communication ended")
-            f += 1
+        for i in range(0, 100):
+            a = "b1_" + str(i)
+            b = "b2_" + str(i)
+            c = "b3_" + str(i)
+            self.rds.set(a, 0)
+            self.rds.set(b, 0)
+            self.rds.set(c, 0)
+
+        # old logic with non-persistent workers. new workers for each superstep
+        # f = 0
+        # while self.graphActive():
+        #     print("Running Superstep:",f)
+        #     self.superstep()
+        #     print("Communication started")
+        #     self.messagePassing()
+        #     print("Communication ended")
+        #     f += 1
+
+        A = []
+        lock = [Lock()] * self.numWorkers
+        for idx in range(self.numWorkers):
+            worker = (WcWorker(idx = idx, tot = self.numWorkers, lock = lock))
+            A.append(worker)
+            worker.create_and_run()
+
+        for workers in A:
+            workers.wait()
         
+        # just copying the final graph from redis into self.graph
         self.graph = [None] * len(self.graph)
         for id in range(self.numWorkers):
             partition = pickle.loads(self.rds.get(id))
