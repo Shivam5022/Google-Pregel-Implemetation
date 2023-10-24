@@ -5,14 +5,6 @@ import copy
 from redis.client import Redis
 from src.base import Worker
 
-"""
-we need 2 barriers. 
-1st: just after superstep is completed so that communication can start
-2nd: after communication is finshed and we can start next superstep
-
-How to add barriers??
-(DONE: this part is handled)
-"""
 
 class WcWorker(Worker):
     def run(self):
@@ -21,24 +13,31 @@ class WcWorker(Worker):
         while True:
             current = 0
             done = True
-            for id in range(self.numWorkers):    # Logic to finish all the supersteps
-                partition = pickle.loads(rds.get(id))
-                for vertex in partition:
+            for workerID in range(self.numWorkers):    # Logic to finish all the supersteps
+                partitionIDs = rds.smembers(f"workerPartition:{workerID}")
+                for vertexID in partitionIDs:
+                    vertex = pickle.loads(rds.hget("vertices", int(vertexID)))
                     current = copy.deepcopy(vertex.superstepNum)
                     if vertex.isActive == True:
                         done = False
                         break
             if done:
+                print(f"Worker {key} has finished the task")
                 break   
-            
-            partition = pickle.loads(rds.get(key))
-            for vertex in partition:
+
+            # current variable contains superstep number S
+
+            partitionIDs = rds.smembers(f"workerPartition:{key}") # This set contains vertex IDs of all
+                                                                  # vertices of this worker's partition
+
+            for vertexID in partitionIDs:
+                vertex = pickle.loads(rds.hget("vertices", int(vertexID)))  # This is how we retrieve vertex from redis
                 if vertex.isActive:
                     print(f"Process {self.id} is working on {vertex.id} in superstep {vertex.superstepNum}")
-                    vertex.update()
-            rds.set(key, pickle.dumps(partition))
+                    vertex.update() # calling update function on this vertex
+                rds.hset("vertices", vertexID, pickle.dumps(vertex))  # Setting this vertex again after update
 
-            # put the logic of barrier 1 here
+            # Barrier_1 here
             current = int(current)
             a = "b1_" + str(current)
             rds.incr(a)
@@ -46,20 +45,22 @@ class WcWorker(Worker):
                 wait = 1
 
             print(f"COMMUNICATION START FOR {current}")
-            ab = time.time()
+
             # START THE COMMUNICATION
             # COMMUNICTION 1 (not bottleneck)
-            partition = pickle.loads(rds.get(key))
-            for vertex in partition:
+
+            ab = time.time()
+            for vertexID in partitionIDs:
+                vertex = pickle.loads(rds.hget("vertices", int(vertexID)))
                 vertex.superstepNum += 1
                 vertex.incomingMessages = []
-            rds.set(key, pickle.dumps(partition))
-
+                rds.hset("vertices", vertexID, pickle.dumps(vertex))
             bc = time.time()
 
             elapsed_time = (bc - ab) * 1000
             print(f'maybe chota {elapsed_time:.2f} milliseconds')
 
+            # Barrier_2 here
             b = "b2_" + str(current)
             rds.incr(b)
             while int(rds.get(b)) != self.numWorkers:
@@ -90,20 +91,26 @@ class WcWorker(Worker):
                     partition (using rds.set(id, p'))
                 Think about this management.
             """
+            """
+                UPDATE:
+
+                1. Added lock for each vertex, instead of whole partition.
+                2. Underlying storage changed. Now each vertex is stored individually
+                    in redis hset, instead of whole partition. Although a set for each
+                    worker is present which gives IDs of all vertices that are assigned
+                    to this particular vertex.
+            """
             cd = time.time()
-            partition = pickle.loads(rds.get(key))
-            for vertex in partition:
+
+            for vertexID in partitionIDs:
+                vertex = pickle.loads(rds.hget("vertices", int(vertexID)))
                 for (destination, message) in vertex.outgoingMessages:
-                    temp = self.workerHash(destination)
-                    self.lock[temp].acquire()
-                    p = pickle.loads(rds.get(temp))
-                    for v in p:  # here i am iterating on complete partition. make this O(1)
-                        assert(type(v) == type(destination))
-                        if v.id == destination.id:
-                            v.incomingMessages.append((vertex, message))
-                            break
-                    rds.set(temp, pickle.dumps(p))
-                    self.lock[temp].release()
+                    dID = destination # destination ID 
+                    self.lock[dID].acquire()  # acquiring lock on this destination vertex, so that others cant access
+                    dVertex = pickle.loads(rds.hget("vertices", int(dID))) # destination vertex
+                    dVertex.incomingMessages.append((vertexID, message)) # message appended
+                    rds.hset("vertices", dID, pickle.dumps(dVertex)) # vertex updated in redis
+                    self.lock[dID].release() # lock released after transferring messages
             
             de = time.time()
             elapsed_time = (de - cd) * 1000
@@ -113,7 +120,8 @@ class WcWorker(Worker):
 
 
             print(f"COMMUNICATION END FOR {current}")
-            # put the logic of barrier 2 here
+
+            # Final Barrier_3 here
             c = "b3_" + str(current)
             rds.incr(c)
             while int(rds.get(c)) != self.numWorkers:

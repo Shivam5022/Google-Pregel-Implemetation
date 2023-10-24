@@ -19,7 +19,8 @@ class Vertex():
     def __init__(self, id, value, edges) -> None:
         self.id = id
         self.value = value
-        self.edges = edges  # type of this is currenty vertex only
+        # self.edges = edges  # type of this is currenty vertex only
+        self.edges = edges  # changed type to ID of the other vertex
         self.incomingMessages = []
         self.outgoingMessages = []
         self.isActive = True

@@ -15,6 +15,7 @@ class Pregel():
     """
     def __init__(self, graph, numWorkers, flag):
         self.graph = graph
+        self.numVertices = len(graph)
         self.numWorkers = numWorkers
         self.parallel = flag
         self.rds = Redis(host='localhost', port=6379, db=0, decode_responses=False)
@@ -36,22 +37,14 @@ class Pregel():
             mod N, where N is the number of partitions, but users can
             replace it.
         """
-        partitions = collections.defaultdict(list)
         for vertex in self.graph:
-            partitions[self.workerHash(vertex)].append(vertex)
-        return partitions
-    
-    def graphActive(self):
-        """
-            This function returns TRUE if any of the vertex in graph is active
-        """
-        for id in range(self.numWorkers):
-            partition = pickle.loads(self.rds.get(id))
-            for vertex in partition:
-                if vertex.isActive == True:
-                    return True
+            workerID = self.workerHash(vertex)  # This worker will contain this vertex
+            vertexID = vertex.id  # unique ID of this vertex
+            self.rds.hset("vertices", vertexID, pickle.dumps(vertex)) # Stored this vertex in the redis
+            self.rds.sadd(f"workerPartition:{workerID}", vertexID)  # Storing a vertex ID in a worker's partition (use a unique key per worker)
         
-        return False
+        # Retrieving all vertex IDs owned by a specific worker (partition)
+        # partitionIDs = self.rds.smembers(f"workerPartition:{workerID}")
     
     def run(self):
         """
@@ -60,12 +53,11 @@ class Pregel():
             2. While the graph is active, carry out the superstep and then pass messages.
                 (Here the worker dies after carrying out the superstep)
         """
-        self.partitions = self.partition()
-        for key, value in self.partitions.items():
-            value_str = pickle.dumps(value)
-            self.rds.set(key, value_str)
+        
+        self.rds.flushall()  # clearing the redis database
+        self.partition() # creating partitions and assigning data
 
-        for i in range(0, 100):
+        for i in range(0, 1000):  # this is for syncronization in supersteps. (Handles 1000 supersteps)
             a = "b1_" + str(i)
             b = "b2_" + str(i)
             c = "b3_" + str(i)
@@ -73,18 +65,8 @@ class Pregel():
             self.rds.set(b, 0)
             self.rds.set(c, 0)
 
-        # old logic with non-persistent workers. new workers for each superstep
-        # f = 0
-        # while self.graphActive():
-        #     print("Running Superstep:",f)
-        #     self.superstep()
-        #     print("Communication started")
-        #     self.messagePassing()
-        #     print("Communication ended")
-        #     f += 1
-
         A = []
-        lock = [Lock()] * self.numWorkers
+        lock = [Lock()] * (self.numVertices + 105)
         for idx in range(self.numWorkers):
             worker = (WcWorker(idx = idx, tot = self.numWorkers, lock = lock))
             A.append(worker)
@@ -94,11 +76,12 @@ class Pregel():
             workers.wait()
         
         # just copying the final graph from redis into self.graph
-        self.graph = [None] * len(self.graph)
-        for id in range(self.numWorkers):
-            partition = pickle.loads(self.rds.get(id))
-            for vertex in partition:
-                self.graph[vertex.id] = vertex
+        self.graph = [None] * self.numVertices
+        for id in range(self.numVertices):
+            self.graph[id] = pickle.loads(self.rds.hget("vertices", id))
+    
+
+    # CODE BELOW THIS IS USELESS, AS WORKERS ARE NOW PERSISTENT!
     
     def superstep(self):
         """

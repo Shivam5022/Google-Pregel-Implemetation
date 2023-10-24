@@ -7,14 +7,13 @@ near-identical.
 
 from src.pregel import Vertex, Pregel
 
-# The next two imports are only needed for the test.  
 from numpy import mat, eye, zeros, ones, linalg
 import random
 import time
 
-num_workers = 6
+num_workers = 5
 
-num_vertices = 30
+num_vertices = 3000
 
 def f(k):
     return k % num_vertices
@@ -35,9 +34,11 @@ def create_edges(vertices):
     """Generates 4 randomly chosen outgoing edges from each vertex in
     vertices."""
     i = 0
+    op = []
+    for i in range(num_vertices):
+        op.append(i)
     for vertex in vertices:
-        # vertex.edges = [vertices[f(i + 1)], vertices[f(i + 2)], vertices[f(i + 3)], vertices[f(i + 4)]]
-        vertex.edges = random.sample(vertices, 4)
+        vertex.edges = random.sample(op, 4)
 
 def pagerank_test(vertices):
     """Computes the pagerank vector associated to vertices, using a
@@ -49,7 +50,7 @@ def pagerank_test(vertices):
     for vertex in vertices:
         num_out_vertices = len(vertex.edges)
         for out_vertex in vertex.edges:
-            G[out_vertex.id,vertex.id] = 1.0/num_out_vertices
+            G[out_vertex,vertex.id] = 1.0/num_out_vertices
     P = (1.0/num_vertices)*mat(ones((num_vertices,1)))
     b = time.time()
     elapsed_time = (b - a) * 1000
@@ -60,7 +61,7 @@ def pagerank_pregel(vertices):
     """Computes the pagerank vector associated to vertices, using
     Pregel."""
     a = time.time()
-    p = Pregel(vertices,num_workers, True)
+    p = Pregel(vertices, num_workers, True)
     p.run()
     b = time.time()
     elapsed_time = (b - a) * 1000
@@ -75,12 +76,12 @@ class PageRankVertex(Vertex):
         # solved by introducing Aggregators into the Pregel framework,
         # but as an initial demonstration this works fine.
         # print("IS IT WORKING")
-        if self.superstepNum < 40:
+        if self.superstepNum < 15:
             self.value = 0.15 / num_vertices + 0.85*sum(
-                [pagerank for (vertex,pagerank) in self.incomingMessages])
+                [pagerank for (z,pagerank) in self.incomingMessages])
             outgoing_pagerank = self.value / len(self.edges)
-            self.outgoingMessages = [(vertex,outgoing_pagerank) 
-                                      for vertex in self.edges]
+            self.outgoingMessages = [(vertexID, outgoing_pagerank) 
+                                      for vertexID in self.edges]
         else:
             self.isActive = False
 
