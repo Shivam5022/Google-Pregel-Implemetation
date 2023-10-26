@@ -2,6 +2,7 @@ import pickle
 import time
 import os
 import copy
+import socket
 from redis.client import Redis
 from src.base import Worker
 
@@ -33,7 +34,7 @@ class WcWorker(Worker):
             for vertexID in partitionIDs:
                 vertex = pickle.loads(rds.hget("vertices", int(vertexID)))  # This is how we retrieve vertex from redis
                 if vertex.isActive:
-                    print(f"Process {self.id} is working on {vertex.id} in superstep {vertex.superstepNum}")
+                    print(f"Process {self.id} is working on vertex ID {vertex.id} in superstep {vertex.superstepNum}")
                     vertex.update() # calling update function on this vertex
                 rds.hset("vertices", vertexID, pickle.dumps(vertex))  # Setting this vertex again after update
 

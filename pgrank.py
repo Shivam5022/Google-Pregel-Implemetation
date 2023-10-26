@@ -11,12 +11,9 @@ from numpy import mat, eye, zeros, ones, linalg
 import random
 import time
 
-num_workers = 5
+num_workers = 6
 
 num_vertices = 3000
-
-def f(k):
-    return k % num_vertices
 
 def main():
     vertices = [PageRankVertex(j,1.0/num_vertices,[]) 
@@ -38,7 +35,7 @@ def create_edges(vertices):
     for i in range(num_vertices):
         op.append(i)
     for vertex in vertices:
-        vertex.edges = random.sample(op, 4)
+        vertex.edges = random.sample(op, 2)
 
 def pagerank_test(vertices):
     """Computes the pagerank vector associated to vertices, using a
@@ -61,7 +58,7 @@ def pagerank_pregel(vertices):
     """Computes the pagerank vector associated to vertices, using
     Pregel."""
     a = time.time()
-    p = Pregel(vertices, num_workers, True)
+    p = Pregel(vertices, num_workers)
     p.run()
     b = time.time()
     elapsed_time = (b - a) * 1000
@@ -76,7 +73,7 @@ class PageRankVertex(Vertex):
         # solved by introducing Aggregators into the Pregel framework,
         # but as an initial demonstration this works fine.
         # print("IS IT WORKING")
-        if self.superstepNum < 15:
+        if self.superstepNum < 20:
             self.value = 0.15 / num_vertices + 0.85*sum(
                 [pagerank for (z,pagerank) in self.incomingMessages])
             outgoing_pagerank = self.value / len(self.edges)

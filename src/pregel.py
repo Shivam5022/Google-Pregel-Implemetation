@@ -1,5 +1,6 @@
 import collections
 import pickle
+import socket
 from multiprocessing import Process, Lock
 from redis.client import Redis
 from src.vertex import Vertex
@@ -13,11 +14,10 @@ class Pregel():
         graph: it is basically list of vertices. (each vertex will contain its associated data)
         numWorkers: total number of worker processes. currently all of them will run in same machine in diff cores
     """
-    def __init__(self, graph, numWorkers, flag):
+    def __init__(self, graph, numWorkers):
         self.graph = graph
         self.numVertices = len(graph)
         self.numWorkers = numWorkers
-        self.parallel = flag
         self.rds = Redis(host='localhost', port=6379, db=0, decode_responses=False)
     
     def workerHash(self, vertex):
@@ -40,6 +40,7 @@ class Pregel():
         for vertex in self.graph:
             workerID = self.workerHash(vertex)  # This worker will contain this vertex
             vertexID = vertex.id  # unique ID of this vertex
+            print(f"Vertex ID {vertexID} set")
             self.rds.hset("vertices", vertexID, pickle.dumps(vertex)) # Stored this vertex in the redis
             self.rds.sadd(f"workerPartition:{workerID}", vertexID)  # Storing a vertex ID in a worker's partition (use a unique key per worker)
         
@@ -80,56 +81,4 @@ class Pregel():
         for id in range(self.numVertices):
             self.graph[id] = pickle.loads(self.rds.hget("vertices", id))
     
-
-    # CODE BELOW THIS IS USELESS, AS WORKERS ARE NOW PERSISTENT!
-    
-    def superstep(self):
-        """
-            Here the new workers are spawned in each superstep!
-            Try to make the workers persistent, and to use a locking mechanism to
-            synchronize!!
-        """
-        if self.parallel:
-            A = []
-            idx = 0
-            for partition in self.partitions.values():
-                A.append(WcWorker(idx = idx))
-                idx += 1
-            
-            assert(idx == self.numWorkers)
-
-            for workers in A:
-                workers.create_and_run()
-
-            for workers in A:
-                workers.wait()
-        
-        else:
-            print("SERIAL")
-            for partition in self.partitions.values():
-                for vertex in partition:
-                    if vertex.isActive:
-                        vertex.update()
-        
-    
-    def messagePassing(self):
-        for id in range(self.numWorkers):
-            partition = pickle.loads(self.rds.get(id))
-            for vertex in partition:
-                vertex.superstepNum += 1
-                vertex.incomingMessages = []
-            self.rds.set(id, pickle.dumps(partition))
-
-
-        for id in range(self.numWorkers):
-            partition = pickle.loads(self.rds.get(id))
-            for vertex in partition:
-                for (destination, message) in vertex.outgoingMessages:
-                    temp = self.workerHash(destination)
-                    p = pickle.loads(self.rds.get(temp))
-                    for v in p:  # here i am iterating on complete partition. make this O(1)
-                        assert(type(v) == type(destination))
-                        if v.id == destination.id:
-                            v.incomingMessages.append((vertex, message))
-                    self.rds.set(temp, pickle.dumps(p))
 
