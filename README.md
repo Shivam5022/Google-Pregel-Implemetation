@@ -1,12 +1,12 @@
 # Google Pregel Implemetation
- This is the dummy implementation of Google's Pregel framework, as a part of Cloud Computing Course Project at IIT Delhi
+ This is the dummy implementation of Google's Pregel framework as a part of the Cloud Computing Course Project at IIT Delhi.
  Contributed By: Shivam, Geetansh, Hemank
 
  Run `python3 pgrank.py`
 
  TODO:
- 1. Fault Tolerence
- 2. More features from Paper
- 3. Make workers persistent
+ 1. Fault Tolerance (@ Geetansh)
+ 2. More features from Paper (@ Hemank)
+ 3. Make workers persistent (DONE)
 
- doesnt work for (num_vertices = 100000), gives `zsh: killed python3 pgrank.py`
+ Now, it works for any number of vertices. Used Redis for storage and communication.
