@@ -13,18 +13,18 @@ import time
 
 num_workers = 6
 
-num_vertices = 3000
+num_vertices = 5000
 
 def main():
     vertices = [PageRankVertex(j,1.0/num_vertices,[]) 
                 for j in range(num_vertices)]
     create_edges(vertices)
     pr_test = pagerank_test(vertices)
-    # print(f"Test computation of pagerank:\n{pr_test}")
     pr_pregel = pagerank_pregel(vertices)
+    # print(f"Test computation of pagerank:\n{pr_test}")
     # print(f"Pregel computation of pagerank:\n{pr_pregel}")
-    diff = pr_pregel-pr_test
     # print(f"Difference between the two pagerank vectors:\n{diff}")
+    diff = pr_pregel-pr_test
     print(f"The norm of the difference is: {linalg.norm(diff)}")
 
 def create_edges(vertices):
@@ -35,7 +35,7 @@ def create_edges(vertices):
     for i in range(num_vertices):
         op.append(i)
     for vertex in vertices:
-        vertex.edges = random.sample(op, 2)
+        vertex.edges = random.sample(op, 3)
 
 def pagerank_test(vertices):
     """Computes the pagerank vector associated to vertices, using a
@@ -59,11 +59,11 @@ def pagerank_pregel(vertices):
     Pregel."""
     a = time.time()
     p = Pregel(vertices, num_workers)
-    p.run()
+    output = p.run()
     b = time.time()
     elapsed_time = (b - a) * 1000
     print(f'Time taken for PREGEL: {elapsed_time:.2f} milliseconds')
-    return mat([vertex.value for vertex in p.graph]).transpose()
+    return mat([vertex.value for vertex in output]).transpose()
 
 class PageRankVertex(Vertex):
 
@@ -72,7 +72,6 @@ class PageRankVertex(Vertex):
         # links (never the case for our tests).  This problem can be
         # solved by introducing Aggregators into the Pregel framework,
         # but as an initial demonstration this works fine.
-        # print("IS IT WORKING")
         if self.superstepNum < 20:
             self.value = 0.15 / num_vertices + 0.85*sum(
                 [pagerank for (z,pagerank) in self.incomingMessages])

@@ -37,15 +37,15 @@ class Pregel():
             mod N, where N is the number of partitions, but users can
             replace it.
         """
+        partitions = collections.defaultdict(list)
         for vertex in self.graph:
             workerID = self.workerHash(vertex)  # This worker will contain this vertex
-            vertexID = vertex.id  # unique ID of this vertex
-            print(f"Vertex ID {vertexID} set")
-            self.rds.hset("vertices", vertexID, pickle.dumps(vertex)) # Stored this vertex in the redis
-            self.rds.sadd(f"workerPartition:{workerID}", vertexID)  # Storing a vertex ID in a worker's partition (use a unique key per worker)
+            partitions[workerID].append(vertex)
         
         # Retrieving all vertex IDs owned by a specific worker (partition)
         # partitionIDs = self.rds.smembers(f"workerPartition:{workerID}")
+
+        return partitions # returning the partition
     
     def run(self):
         """
@@ -56,29 +56,29 @@ class Pregel():
         """
         
         self.rds.flushall()  # clearing the redis database
-        self.partition() # creating partitions and assigning data
+        partitions = self.partition() # creating partitions and assigning data
 
         for i in range(0, 1000):  # this is for syncronization in supersteps. (Handles 1000 supersteps)
             a = "b1_" + str(i)
             b = "b2_" + str(i)
-            c = "b3_" + str(i)
             self.rds.set(a, 0)
             self.rds.set(b, 0)
-            self.rds.set(c, 0)
 
-        A = []
-        lock = [Lock()] * (self.numVertices + 105)
+        Pool = []
         for idx in range(self.numWorkers):
-            worker = (WcWorker(idx = idx, tot = self.numWorkers, lock = lock))
-            A.append(worker)
+            worker = (WcWorker(idx = idx, tot = self.numWorkers, chunk = partitions[idx]))
+            Pool.append(worker)
             worker.create_and_run()
 
-        for workers in A:
+        for workers in Pool:
             workers.wait()
         
-        # just copying the final graph from redis into self.graph
-        self.graph = [None] * self.numVertices
+        # Copying the final graph from redis into output graph
+
+        output = [None] * self.numVertices
         for id in range(self.numVertices):
-            self.graph[id] = pickle.loads(self.rds.hget("vertices", id))
+            output[id] = pickle.loads(self.rds.hget("vertices", id))
+
+        return output
     
 

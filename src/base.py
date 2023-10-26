@@ -1,13 +1,13 @@
 import os
 import signal
-from multiprocessing import Process
+from multiprocessing import Process, Manager
 from abc import abstractmethod, ABC
 
 class Worker(ABC):
-    def __init__(self, idx, tot, lock):
+    def __init__(self, idx, tot, chunk):
         self.id = idx
         self.numWorkers = tot
-        self.lock = lock
+        self.partition = chunk
         self.process : Process
         self.pid = -1
     
@@ -16,13 +16,10 @@ class Worker(ABC):
         self.process.start()
         self.pid = self.process.pid
     
-    def workerHash(self, vertex):
-        """ Returns the id of the worker that vertex is assigned to """
-        return int(hash(vertex.id) % self.numWorkers)
-    
     @abstractmethod
     def run(self):
         raise NotImplementedError
     
     def wait(self):
         self.process.join()
+
