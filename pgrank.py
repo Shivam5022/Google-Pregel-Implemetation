@@ -11,7 +11,7 @@ from numpy import mat, eye, zeros, ones, linalg
 import random
 import time
 
-num_workers = 6
+num_workers = 3
 
 num_vertices = 5000
 

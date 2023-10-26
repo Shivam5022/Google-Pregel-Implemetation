@@ -9,6 +9,7 @@ class Worker(ABC):
         self.numWorkers = tot
         self.partition = chunk
         self.process : Process
+        self.current = 0
         self.pid = -1
     
     def create_and_run(self):

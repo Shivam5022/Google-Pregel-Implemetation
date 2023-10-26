@@ -61,8 +61,12 @@ class Pregel():
         for i in range(0, 1000):  # this is for syncronization in supersteps. (Handles 1000 supersteps)
             a = "b1_" + str(i)
             b = "b2_" + str(i)
+            c = "b3_" + str(i)
             self.rds.set(a, 0)
             self.rds.set(b, 0)
+            self.rds.set(c, 0)
+        
+        self.rds.set("active", self.numVertices)
 
         Pool = []
         for idx in range(self.numWorkers):
