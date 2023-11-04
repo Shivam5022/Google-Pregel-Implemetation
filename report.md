@@ -184,7 +184,7 @@ However, it's important to note that in a single-machine implementation, a thres
 - Integrated Fault Tolerance mechanisms into the system to enhance its resilience.
 - Engaged in comprehensive analysis and visualization of results, effectively plotting and interpreting the generated outputs.
 
-#### 3. Hemank Bajaj (2020CS10xxx)
+#### 3. Hemank Bajaj (2020CS10349)
 
 - Implemented aggregators and additional functions within the system, enhancing its computational capabilities.
 - Contributed to establishing synchronization protocols between workers during the superstep execution, ensuring effective coordination in the distributed environment.

@@ -5,21 +5,26 @@ We test our pregel implementation for max node (with aggregator) against a simpl
 """
 
 from src.pregel import Vertex, Pregel
-
+from src.aggregator import MaxAggregator
 import random
 import time
 
 num_workers = 3
-num_vertices = 5000
+num_vertices = 100
 
+# using max aggregator
+maxAggr = MaxAggregator(0)
 
 class MaxVertex(Vertex):
     def update(self):
-        max_value = max([self.value] + [val for (_, val) in self.incomingMessages])
+        
+        maxAggr.setOffset(self.value)
+        max_value = maxAggr.call(self.incomingMessages)
+
         if self.superstepNum == 0:
-            self.outgoingMessages = [(vertexID, self.value) for vertexID in self.edges]
+            self.outgoingMessages = [(vertexID, self.value) for vertexID in range(1, num_vertices + 1)]
         elif max_value > self.value:
-            self.outgoingMessages = [(vertexID, max_value) for vertexID in self.edges]
+            self.outgoingMessages = [(vertexID, max_value) for vertexID in range(1, num_vertices + 1)]
             self.value = max_value
         else:
             self.isActive = False
@@ -44,28 +49,29 @@ class MaxNodeGraph:
             maximum value node 
         """
         queue = []
-        vis = [False for j in range(num_vertices)]
+        vis = [False for j in range(len(self.graph))]
 
         queue.append(0)
         vis[0] = True
 
         max_val = -1
         max_node = -1
-        while len(queue) > 0:
-            node = self.graph[queue.pop(0)]
-            node_val = node.value
-            node_id = node.id
+        for vertex in range(len(self.graph)):
+            if vis[vertex]:
+                continue
+            while len(queue) > 0:
+                node = self.graph[queue.pop(0)]
+                node_val = node.value
+                node_id = node.id
 
-            
-
-            if node_val > max_val: 
-                max_val = node_val 
-                max_node = node_id 
-            
-            for child in node.edges:
-                if not vis[child]:
-                    queue.append(child)
-                    vis[child] = True
+                if node_val > max_val: 
+                    max_val = node_val 
+                    max_node = node_id 
+                
+                for child in node.edges:
+                    if not vis[child]:
+                        queue.append(child)
+                        vis[child] = True
 
         return max_val
     
