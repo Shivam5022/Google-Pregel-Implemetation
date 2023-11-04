@@ -15,6 +15,7 @@ class WcWorker(Worker):
 
             """
             Changes if a worker dies: (Fault Tolerence):
+                Checkpoint at frequency what paper suggests
             1.  let file 'f' contains the latest checkpointed partition (let superstep S) of this worker.
                 it will basically store all vertices and its associated data. 
                 The vertices of this file must be assigned to other alive workers.
@@ -73,7 +74,7 @@ class WcWorker(Worker):
                 1. iterate on all the vertices of worker's partition and put
                    the outgoing messages in the destination. Use Redis here!
                    rds.rpush()
-                2. Later in next superstep, each vertex will pull the messages into
+                2. Later in next superstep, each vertex will mpull the messages into
                    its incomingMessages from redis. rds.rpop() [Done this thing above.]
             """
             
