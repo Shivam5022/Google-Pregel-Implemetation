@@ -24,8 +24,8 @@ def main():
     # print(f"Test computation of pagerank:\n{pr_test}")
     # print(f"Pregel computation of pagerank:\n{pr_pregel}")
     # print(f"Difference between the two pagerank vectors:\n{diff}")
-    # diff = pr_pregel-pr_test
-    # print(f"The norm of the difference is: {linalg.norm(diff)}")
+    diff = pr_pregel-pr_test
+    print(f"The norm of the difference is: {linalg.norm(diff)}")
 
 def create_edges(vertices):
     """Generates 4 randomly chosen outgoing edges from each vertex in
