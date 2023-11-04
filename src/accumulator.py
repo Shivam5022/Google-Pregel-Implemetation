@@ -16,16 +16,16 @@ class Aggregator(ABC):
         
 
 class MaxAggregator(Aggregator):
-    def __init__(self, vertices, aggr):
-        super().__init__(vertices, aggr)
+    def __init__(self, vertices):
+        super().__init__(vertices, -1e18)
 
     def aggregate(self, value):
         self.aggr = max(value, self.aggr)
         return self.aggr
     
 class SumAggregator(Aggregator):
-    def __init__(self, vertices, aggr):
-        super().__init__(vertices, aggr)
+    def __init__(self, vertices, offset):
+        super().__init__(vertices, offset)
 
     def aggregate(self, value):
         self.aggr = value + self.aggr
