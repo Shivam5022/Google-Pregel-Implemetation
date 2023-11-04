@@ -6,20 +6,25 @@ We test our pregel implementation for max node (with aggregator) against a simpl
 
 from src.pregel import Vertex, Pregel
 
-from numpy import mat, eye, zeros, ones, linalg
 import random
 import time
 
 num_workers = 3
-
 num_vertices = 5000
 
 
 class MaxVertex(Vertex):
     def update(self):
-        pass
+        max_value = max([self.value] + [val for (_, val) in self.incomingMessages])
+        if self.superstepNum == 0:
+            self.outgoingMessages = [(vertexID, self.value) for vertexID in self.edges]
+        elif max_value > self.value:
+            self.outgoingMessages = [(vertexID, max_value) for vertexID in self.edges]
+            self.value = max_value
+        else:
+            self.isActive = False
 
-class RandomGraph:
+class MaxNodeGraph:
     def __init__(self, num_vertices):
         self.graph = [MaxVertex(j, random.randint(0, 4*num_vertices), []) for j in range(num_vertices)]
         def create_edges(vertices):
@@ -47,11 +52,11 @@ class RandomGraph:
         max_val = -1
         max_node = -1
         while len(queue) > 0:
-            node = self.graph[queue[0]]
+            node = self.graph[queue.pop(0)]
             node_val = node.value
             node_id = node.id
 
-            queue.pop(0)
+            
 
             if node_val > max_val: 
                 max_val = node_val 
@@ -62,7 +67,7 @@ class RandomGraph:
                     queue.append(child)
                     vis[child] = True
 
-        return max_node
+        return max_val
     
     def maxNodePregel(self):
         """
@@ -70,8 +75,10 @@ class RandomGraph:
             to the problem of finding the maximum value node. 
             In this we make use of aggregators to ease out the implementation
         """
-        
-        pass 
+        pregel_instance = Pregel(self.graph, num_workers)
+        output = pregel_instance.run()
+        val = [node.value for node in output]
+        return max(val)
 
     def maxNodeIter(self):
         """
@@ -86,14 +93,22 @@ class RandomGraph:
             if node_val > max_val:
                 max_val = node_val
                 max_node = node_id
-        return max_node 
+        return max_val 
 
 def main():
-    graph = RandomGraph(num_vertices=num_vertices)
+    graph = MaxNodeGraph(num_vertices=num_vertices)
     max_node_bfs = graph.maxNodeBFS()
     max_node_iter = graph.maxNodeIter()
-
-    assert max_node_bfs == max_node_iter 
+    
+    output = graph.maxNodePregel()
+    # maxi = -1
+    # for vertex in output:
+    #     maxi = max(maxi, vertex.value)
+    print(output)
+    # print(vertex)
+    print(max_node_bfs)
+    print(max_node_iter)
+    assert max_node_iter == max_node_bfs
 
 if __name__ == "__main__":
     main()
