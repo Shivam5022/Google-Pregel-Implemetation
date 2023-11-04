@@ -41,7 +41,7 @@ class Pregel():
         for vertex in self.graph:
             workerID = self.workerHash(vertex)  # This worker will contain this vertex
             partitions[workerID].append(vertex)
-        
+            vertex.partitionID = workerID
         # Retrieving all vertex IDs owned by a specific worker (partition)
         # partitionIDs = self.rds.smembers(f"workerPartition:{workerID}")
 

@@ -25,6 +25,7 @@ class Vertex():
         self.outgoingMessages = []
         self.isActive = True
         self.superstepNum = 0
+        self.partitionID = -1
     
     def setValue(self, value):
         self.value = value
@@ -32,4 +33,6 @@ class Vertex():
     def addEdge(self, edge):
         self.edges.append(edge)
     
+    def getPartitionID(self):
+        return self.partitionID
     # TODO: add rest of the functions as we move!
