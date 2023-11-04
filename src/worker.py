@@ -57,7 +57,8 @@ class WcWorker(Worker):
                     z = pickle.loads(z)
                     vertex.incomingMessages.append(z)
                 if vertex.isActive:
-                    print(f"Process {key} is working on vertex ID {vertex.id}, {vertex.value}, {vertex.incomingMessages} in superstep {vertex.superstepNum}")
+                    print(f"Process {key} is working on vertex ID {vertex.id} in superstep {vertex.superstepNum}")
+                    # print(f"Process {key} is working on vertex ID {vertex.id}, {vertex.value}, {vertex.incomingMessages} in superstep {vertex.superstepNum}")
                     vertex.update() # calling update function on this vertex
                     vertex.superstepNum += 1
                     vertex.incomingMessages = [] 

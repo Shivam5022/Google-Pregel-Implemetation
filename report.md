@@ -1,6 +1,6 @@
 # Pregel: A System for Large-Scale Graph Processing (Dummy Implementation)
 
-## Geetansh Juneja (2020CS50649), Hemank Bajaj (2020CS1xxxx), Shivam Verma (2020CS50442)
+## Geetansh Juneja (2020CS50649), Hemank Bajaj (2020CS10349), Shivam Verma (2020CS50442)
 
 [toc]
 
@@ -166,7 +166,7 @@ However, it's important to note that in a single-machine implementation, a thres
 3. **Redis Integration:**
    Incorporating and maintaining Redis for communication and synchronization posed some challenges. Configuring Redis for effective message handling and barrier implementation required good understanding of the tool and efficient handling to avoid bottlenecks or data inconsistencies.
 4. **Fault Tolerance and Error Handling:**
-   Devising fault-tolerant mechanisms to handle processes failures or errors during the computation was not trivial. Ensuring the integrity of the computation and data while handling potential failures was likely a considerable challenge.
+   Implementing fault-tolerant mechanisms to handle processes failures or errors during the computation was not trivial. Ensuring the integrity of the computation and data while handling potential failures was likely a considerable challenge.
 
 ---
 
