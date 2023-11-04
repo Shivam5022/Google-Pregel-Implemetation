@@ -19,7 +19,7 @@ def main():
     vertices = [PageRankVertex(j,1.0/num_vertices,[]) 
                 for j in range(num_vertices)]
     create_edges(vertices)
-    # pr_test = pagerank_test(vertices)
+    pr_test = pagerank_test(vertices)
     pr_pregel = pagerank_pregel(vertices)
     # print(f"Test computation of pagerank:\n{pr_test}")
     # print(f"Pregel computation of pagerank:\n{pr_pregel}")
