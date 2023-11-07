@@ -207,8 +207,4 @@ However, it's important to note that in a single-machine implementation, a thres
 #### 3. Hemank Bajaj (2020CS10349)
 
 - Implemented aggregators and additional functions within the system, enhancing its computational capabilities.
-<<<<<<< Updated upstream
 - Contributed to establishing synchronization protocols between workers during the superstep execution, ensuring effective coordination in the distributed environment.
-=======
-- Contributed to establishing synchronization protocols between workers during the superstep execution, ensuring effective coordination in the distributed environment.
->>>>>>> Stashed changes
