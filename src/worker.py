@@ -96,7 +96,7 @@ class WcWorker(Worker):
             if(self.current%2==0): # checkpointing
                 save_checkpoint(incoming_messages, vertex_values, vertex_active, self.current-1, self.id)
 
-            if(self.id == 1 and self.current==7):
+            if((self.id == 1 and self.current==7) or (self.id == 3 and self.current==7)):
                 print(f"Killing worker with id {self.id}")
                 exit_flag.set()
                 sys.exit()

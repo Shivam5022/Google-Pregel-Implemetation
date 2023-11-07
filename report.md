@@ -123,7 +123,31 @@ To facilitate the exchange of messages, we employed Redis as a pivotal component
 
 #### 2. Fault Tolerence
 
-@ To be added by Geetansh after implementing
+**1. Check how many processes have died and have completed:**
+
+Monitor the health and status of worker processes. Periodically check the status of each worker to determine if any processes have terminated or completed their tasks. 
+
+**2. Kill all the alive workers:**
+
+In the event of failures or completion of tasks, terminate all currently running worker processes to prepare for the system's recovery. This step ensures a clean state for the subsequent restart and redistribution of tasks.
+
+**3. Read the checkpoint files to get the last checkpoint data:**
+
+Checkpoint files store the state or progress of the system at certain intervals. Upon failure or termination of processes, retrieve the latest checkpoint data to re-establish the system's state. 
+
+**4. Redistribute the partition to the live workers:**
+
+Reallocate or redistribute the tasks, partitions, or workload among the surviving, active worker processes. Ensure that the tasks previously handled by failed or completed workers are reassigned to the available worker processes to maintain the system's progress.
+
+**5. Update the state of all the vertices:**
+
+Update the state of the vertices or entities that were being processed by the failed workers. This involves restoring the state from the checkpoint data and applying any necessary modifications to account for the work already completed before the failure.
+
+**6. Restart the alive workers:**
+
+Initiate the restart process for the surviving worker processes. This includes spawning new worker processes, initializing them, and assigning them the redistributed tasks or partitions to resume the system's operation from the last checkpointed state.
+
+This fault-tolerance strategy aims to maintain system resilience in the face of worker process failures or terminations by recovering the system state from the last known consistent state (checkpoint) and resuming operations with the remaining active worker processes.
 
 ---
 
@@ -152,10 +176,6 @@ The presented plot exhibits the correlation between the total runtime and the nu
 The reduction in total runtime with an increased number of workers signifies enhanced parallelism, allowing tasks to be executed concurrently. With more workers, each process is assigned a smaller partition, enabling them to handle tasks more efficiently in parallel.
 
 However, it's important to note that in a single-machine implementation, a threshold exists. Beyond a certain point—typically when the number of workers exceeds the available cores, as in an 8-core CPU—the benefits of increasing workers diminish. In such cases, the runtime may increase due to the overhead involved in managing a higher number of processes, ultimately offsetting the advantages of parallelism. Therefore, there's a point where adding more workers no longer decreases the runtime and might even increase it due to management overhead.
-
-3. **Plots for maxNode example**
-
-   > TBA by Hemank
 
 #### Major Roadblocks
 
@@ -188,5 +208,3 @@ However, it's important to note that in a single-machine implementation, a thres
 
 - Implemented aggregators and additional functions within the system, enhancing its computational capabilities.
 - Contributed to establishing synchronization protocols between workers during the superstep execution, ensuring effective coordination in the distributed environment.
-
-*Our future plans involve an expansion of this model to encompass multiple worker machines instead of relying solely on a single machine. Additionally, our aims include the implementation of confined recovery mechanisms to address Fault Tolerance. This methodology aims to recompute solely the failed worker partitions from the checkpointed state, thereby significantly reducing the computational overhead by avoiding the need to reprocess all vertices.*

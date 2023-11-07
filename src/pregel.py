@@ -98,7 +98,20 @@ class Pregel():
             2. While the graph is active, carry out the superstep and then pass messages.
                 (Here the worker dies after carrying out the superstep)
         """
-        
+
+        import shutil
+        folder_path = 'checkpoint'
+        # Check if the folder exists
+        if os.path.exists(folder_path) and os.path.isdir(folder_path):
+            try:
+                shutil.rmtree(folder_path)
+                os.makedirs(folder_path)
+                print("Folder clearing done!!")
+            except Exception as e:
+                print(f"Failed to delete folder contents: {e}")
+        else:
+            print("Folder does not exist or is not a directory.")
+
         self.rds.flushall()  # clearing the redis database
         partitions = self.partition() # creating partitions and assigning data
 
@@ -198,11 +211,6 @@ class Pregel():
                     Pool[id].numWorkers = len(alive_worker_ids)
                     Pool[id].current = superstep
                     Pool[id].create_and_run()
-                
-                # time.sleep(2)
-
-        # for workers in Pool:
-        #     workers.wait()
         
         # Copying the final graph from redis into output graph
 
@@ -211,5 +219,3 @@ class Pregel():
             output[id] = pickle.loads(self.rds.hget("vertices", id))
 
         return output
-    
-

@@ -12,7 +12,7 @@ import time
 
 num_workers = 6
 
-num_vertices = 5000
+num_vertices = 500
 
 def main():
     vertices = [PageRankVertex(j,1.0/num_vertices,[]) 
