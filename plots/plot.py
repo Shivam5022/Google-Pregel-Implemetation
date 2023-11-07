@@ -18,4 +18,8 @@ for i in range(len(vertices)):
     plt.text(vertices[i], time_taken[i], str(vertices[i]), ha='right', va='bottom')
 
 # Show the plot
+<<<<<<< Updated upstream
 plt.show()
+=======
+plt.show()
+>>>>>>> Stashed changes

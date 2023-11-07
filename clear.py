@@ -11,4 +11,8 @@ if os.path.exists(folder_path) and os.path.isdir(folder_path):
     except Exception as e:
         print(f"Failed to delete folder contents: {e}")
 else:
+<<<<<<< Updated upstream
     print("Folder does not exist or is not a directory.")
+=======
+    print("Folder does not exist or is not a directory.")
+>>>>>>> Stashed changes
