@@ -1,10 +1,54 @@
 import collections
 import pickle
-import socket
+import time
 from multiprocessing import Process, Lock
 from redis.client import Redis
 from src.vertex import Vertex
 from src.worker import WcWorker
+import glob
+import os
+
+def get_checkpoint_data():
+
+    checkpoint_folder = 'checkpoint'
+    vertex_values = {}
+    vertex_in_messages = {}
+    vertex_active = {}
+
+    checkpoint_files = glob.glob(os.path.join(checkpoint_folder, "checkpoint_worker_*_superstep_*.pkl"))
+
+    last_superstep = -1
+
+    for checkpoint_file in checkpoint_files:
+        with open(checkpoint_file, 'rb') as file:
+            checkpoint_data = pickle.load(file)
+        
+        superstep_num = int(checkpoint_file.split("_superstep_")[1].split(".")[0])
+        last_superstep = max(last_superstep, superstep_num)
+    
+    for checkpoint_file in checkpoint_files:
+        with open(checkpoint_file, 'rb') as file:
+            checkpoint_data = pickle.load(file)
+        
+        vals = checkpoint_data['values']
+        in_msgs = checkpoint_data['incoming_messages']
+        actives = checkpoint_data['actives']
+
+        superstep_number = int(checkpoint_file.split("_superstep_")[1].split(".")[0])
+
+        if superstep_number == last_superstep:
+
+            for vertex_id, vertex_value in vals.items():
+                vertex_values[vertex_id] = vertex_value
+            
+            for vertex_id, msg in in_msgs.items():
+                vertex_in_messages[vertex_id] = msg
+            
+            for vertex_id, act in actives.items():
+                vertex_active[vertex_id] = act
+        
+    return last_superstep, vertex_values, vertex_in_messages, vertex_active
+
 
 class Pregel():
     """
@@ -74,8 +118,91 @@ class Pregel():
             Pool.append(worker)
             worker.create_and_run()
 
-        for workers in Pool:
-            workers.wait()
+        alive_worker_ids = [id for id in range(self.numWorkers)]
+
+        for id in alive_worker_ids:        
+            self.rds.set(f'done_{id}',0)
+
+        while True:
+            """
+                1. Check how many processes have died and have completed
+                2. Kill all the alive workers
+                3. Read the checkpoint files to get the last checkpoint data
+                4. Redistribute the partition to the live workers
+                5. Update the state of all the vertices
+                6. Restart the alive workers
+            """
+            completed_workers = 0
+            for id in alive_worker_ids:
+                try:
+                    completed_workers += int(self.rds.get(f'done_{id}').decode('utf-8'))
+                    self.rds.set(f'done_{id}',0)
+                except Exception as e:
+                    print(e)
+                    self.rds.set(f'done_{id}',0)
+            
+            
+            if completed_workers == self.numWorkers:
+                break
+            time.sleep(2)
+            
+            current_alive_workers = []
+            for id in alive_worker_ids:
+                try:
+                    status = int(self.rds.get(f'alive_{id}').decode('utf-8'))
+                    if(status==1):
+                        current_alive_workers.append(id)
+                    self.rds.set(f'alive_{id}',0) 
+                except:
+                    self.rds.set(f'alive_{id}',0) 
+            
+            if(len(current_alive_workers)==0):
+                break
+
+            if len(current_alive_workers) != len(alive_worker_ids):
+                alive_worker_ids = current_alive_workers
+                # killing alive workers
+                for id in alive_worker_ids:
+                    Pool[id].kill()
+                self.numWorkers = len(alive_worker_ids)
+                new_partition = self.partition()
+                # reassigning partitions
+                for i in range(self.numWorkers):        
+                    Pool[alive_worker_ids[i]].partition = new_partition[i]
+
+                superstep, vertex_data, vertex_inmsg, vertex_active = get_checkpoint_data()
+
+                self.rds.set("active",0)
+                for vertex in self.graph:
+                    vertex.value = vertex_data[vertex.id]
+                    vertex.incomingMessages = vertex_inmsg[vertex.id]
+                    vertex.superstepNum = superstep
+                    vertex.isActive = vertex_active[vertex.id]
+                    vertex.outgoingMessages = []
+                    if(vertex.isActive):
+                        self.rds.incr("active")
+                    while True: # Delivering incoming messages to this vertex
+                        z = self.rds.rpop(f"msg:{vertex.id}")
+                        if z == None:
+                            break
+                
+                for i in range(0, 1000):  # this is for syncronization in supersteps. (Handles 1000 supersteps)
+                    a = "b1_" + str(i)
+                    b = "b2_" + str(i)
+                    c = "b3_" + str(i)
+                    self.rds.set(a, 0)
+                    self.rds.set(b, 0)
+                    self.rds.set(c, 0)
+                
+                for id in alive_worker_ids:
+                    Pool[id].numWorkers = len(alive_worker_ids)
+                    Pool[id].current = superstep
+                    Pool[id].create_and_run()
+                
+                # time.sleep(2)
+
+        # for workers in Pool:
+        #     workers.wait()
         
         # Copying the final graph from redis into output graph
 

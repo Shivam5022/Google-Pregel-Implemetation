@@ -23,4 +23,10 @@ class Worker(ABC):
     
     def wait(self):
         self.process.join()
-
+    
+    def is_alive(self):
+        # Check if the worker process is alive
+        return self.process.is_alive()
+    
+    def kill(self):
+        self.process.terminate()
