@@ -32,14 +32,9 @@ plt.plot(workers, time_taken, marker='o', linestyle='-', color='b', markersize=8
 plt.title('Number of Workers vs Time Taken (Pagerank for 50000 vertices)')
 plt.xlabel('Number of Workers')
 plt.ylabel('Time Taken (ms)')
-# plt.grid(True)
 
 # Set x-axis ticks to only display the provided worker values
 plt.xticks(workers)
-
-# Marking each x-coordinate
-# for i in range(len(workers)):
-#     plt.text(workers[i], time_taken[i], str(workers[i]), ha='right', va='bottom')
 
 # Show the plot
 plt.show()

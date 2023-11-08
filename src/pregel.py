@@ -7,6 +7,7 @@ from src.vertex import Vertex
 from src.worker import WcWorker
 import glob
 import os
+import shutil
 
 def get_checkpoint_data():
 
@@ -98,8 +99,6 @@ class Pregel():
             2. While the graph is active, carry out the superstep and then pass messages.
                 (Here the worker dies after carrying out the superstep)
         """
-
-        import shutil
         folder_path = 'checkpoint'
         # Check if the folder exists
         if os.path.exists(folder_path) and os.path.isdir(folder_path):
