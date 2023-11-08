@@ -153,25 +153,25 @@ This fault-tolerance strategy aims to maintain system resilience in the face of 
 
 ### C. RESULTS AND CHALLENGES
 
-1. **Total Runtime vs Number of Vertices in Input Graph for Page Rank Computation using Pregel using 6 workers**
+1. **Total Runtime vs Number of Vertices in Input Graph for Page Rank Computation using Pregel using 5 workers**
 
 The following plot illustrates the relationship between the total runtime and the number of vertices in the input graph for the Page Rank computation using Pregel. The data represents the computational time required for different sizes of input graphs used in the Page Rank algorithm. The x-axis represents the number of vertices in the graph, while the y-axis shows the total runtime in milliseconds. The plot highlights how the runtime varies concerning the graph's size, providing insights into the computational performance of the Page Rank algorithm with varying input graph sizes.
 
 ![](plots/vertices_vs_time.png)
 
-**Observation**: In our observation, a noticeable trend emerges as the runtime escalates in conjunction with the increasing number of vertices in the input graph, while employing 6 worker processes. Notably, the computational bottleneck did not stem from the `compute` function executed on each vertex. Instead, the primary impediment to computational efficiency was the inter-worker communication subsequent to each superstep. As the volume of vertices within the input dataset expanded, the temporal resources allocated to managing communication and message passing substantially increased.
+**Observation**: In our observation, a noticeable trend emerges as the runtime escalates in conjunction with the increasing number of vertices in the input graph, while employing 5 worker processes. Notably, the computational bottleneck did not stem from the `compute` function executed on each vertex. Instead, the primary impediment to computational efficiency was the inter-worker communication subsequent to each superstep. As the volume of vertices within the input dataset expanded, the temporal resources allocated to managing communication and message passing substantially increased.
 
 The orchestration of message transfers via Redis, while integral to our implementation, posed challenges in emulating the precise outcomes outlined in the official Pregel model. Within a multi-machine framework, messages are dispatched asynchronously, facilitating concurrent computation and communication overlap, as well as batching, while ensuring their delivery prior to the termination of the superstep. However, within our singular machine implementation, managing the intricacies of message transfers presented a non-trivial task.
 
 Our implementation's core architecture and principles remain in line with the Pregel paper, ensuring that we adhere to its fundamental concepts while adapting to the specific requirements of our single-machine environment.
 
-2. **Total Runtime vs Number of Workers for Page Rank Computation using Pregel with 5000 Vertices**
+2. **Total Runtime vs Number of Workers for Page Rank Computation using Pregel with 50000 Vertices**
 
-The presented plot exhibits the correlation between the total runtime and the number of workers employed for the Page Rank computation using Pregel when the input graph contains 5000 vertices. This graphical representation demonstrates the relationship between the computational time and the variation in the number of workers involved in the execution of the Page Rank algorithm. The x-axis represents the number of workers utilized in the computation, while the y-axis displays the total runtime in milliseconds. The plot serves to elucidate the impact of altering the workforce on the computational efficiency of the Page Rank algorithm specifically for an input graph consisting of 5000 vertices.
+The presented plot exhibits the correlation between the total runtime and the number of workers employed for the Page Rank computation using Pregel when the input graph contains 50000 vertices. This graphical representation demonstrates the relationship between the computational time and the variation in the number of workers involved in the execution of the Page Rank algorithm. The x-axis represents the number of workers utilized in the computation, while the y-axis displays the total runtime in milliseconds. The plot serves to elucidate the impact of altering the workforce on the computational efficiency of the Page Rank algorithm specifically for an input graph consisting of 50000 vertices.
 
 ![](plots/workers_vs_time.png)
 
-**Observation**: The depicted trend demonstrates a clear inverse relationship between the total runtime and the number of workers utilized in the Page Rank computation using Pregel with an input graph containing 5000 vertices. As the number of workers increases, the total runtime of the computation decreases. This decline in runtime is a desirable outcome, signifying the advantage of distributing the workload among multiple workers, thus enabling concurrent processing.
+**Observation**: The depicted trend demonstrates a clear inverse relationship between the total runtime and the number of workers utilized in the Page Rank computation using Pregel with an input graph containing 50000 vertices. As the number of workers increases, the total runtime of the computation decreases. This decline in runtime is a desirable outcome, signifying the advantage of distributing the workload among multiple workers, thus enabling concurrent processing.
 
 The reduction in total runtime with an increased number of workers signifies enhanced parallelism, allowing tasks to be executed concurrently. With more workers, each process is assigned a smaller partition, enabling them to handle tasks more efficiently in parallel.
 
